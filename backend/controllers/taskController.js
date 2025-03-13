@@ -3,8 +3,8 @@ const Task = require("../models/taskModel");
 // ✅ Fetch tasks for logged-in user
 const getTasks = async (req, res) => {
   try {
-    const userId = req.user.id; // Ensure user ID comes from token
-    const tasks = await Task.find({ user: userId }).sort({ createdAt: -1 }); // Fetch tasks only for the logged-in user
+    const userId = req.user.id; // Get user ID from token
+    const tasks = await Task.find({ user: userId }).sort({ createdAt: -1 }); // Fetch user-specific tasks
     res.status(200).json({ success: true, data: tasks });
   } catch (error) {
     res.status(500).json({ success: false, message: "Server error", error });
@@ -15,7 +15,7 @@ const getTasks = async (req, res) => {
 const createTask = async (req, res) => {
   try {
     const { title, description, deadline } = req.body;
-    const userId = req.user.id; // ✅ Extract user ID from token
+    const userId = req.user.id; // Ensure the request has a valid user
 
     if (!userId) {
       return res
@@ -27,7 +27,7 @@ const createTask = async (req, res) => {
       title,
       description,
       deadline,
-      user: userId, // ✅ Assign user ID to the task
+      user: userId, // Assign task to logged-in user
     });
 
     await task.save();
@@ -37,11 +37,11 @@ const createTask = async (req, res) => {
   }
 };
 
-// ✅ Update task
+// ✅ Update Task (Only the owner can update)
 const updateTask = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.id; // Ensure only the task owner can update
+    const userId = req.user.id;
 
     const task = await Task.findOneAndUpdate(
       { _id: id, user: userId }, // Ensure task belongs to user
@@ -50,7 +50,9 @@ const updateTask = async (req, res) => {
     );
 
     if (!task) {
-      return res.status(404).json({ message: "Task not found" });
+      return res
+        .status(404)
+        .json({ message: "Task not found or unauthorized" });
     }
 
     res.status(200).json({ message: "Task updated successfully", task });
@@ -59,16 +61,18 @@ const updateTask = async (req, res) => {
   }
 };
 
-// ✅ Delete task
+// ✅ Delete Task (Only the owner can delete)
 const deleteTask = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.id; // Ensure only the task owner can delete
+    const userId = req.user.id;
 
     const task = await Task.findOneAndDelete({ _id: id, user: userId });
 
     if (!task) {
-      return res.status(404).json({ message: "Task not found" });
+      return res
+        .status(404)
+        .json({ message: "Task not found or unauthorized" });
     }
 
     res.status(200).json({ message: "Task deleted successfully" });

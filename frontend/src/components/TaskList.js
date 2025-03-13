@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios"; // ✅ Import axios
-
+import axios from "../api/axios"; // ✅ Ensure correct path
 import TaskItem from "./TaskItem";
 import TaskForm from "./TaskForm";
 
 const TaskList = () => {
-  const [tasks, setTasks] = useState([]); // Initialize tasks as an empty array
-  const [loading, setLoading] = useState(true); // Track loading state
-  const [error, setError] = useState(null); // Track API errors
+  const [tasks, setTasks] = useState([]); // Holds tasks
+  const [loading, setLoading] = useState(true); // Loading state
+  const [error, setError] = useState(null); // Error state
 
   useEffect(() => {
     fetchTasks();
@@ -22,11 +21,11 @@ const TaskList = () => {
         return;
       }
 
-      const res = await axios.get("http://localhost:5000/api/tasks", {
-        headers: { Authorization: `Bearer ${token}` }, // ✅ Ensure token is sent
+      const res = await axios.get("/tasks", {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      console.log("API Response:", res.data); // Debugging
+      console.log("Fetched Tasks:", res.data);
       setTasks(res.data.data);
     } catch (error) {
       console.error("Error fetching tasks:", error);
@@ -42,15 +41,13 @@ const TaskList = () => {
       <TaskForm fetchTasks={fetchTasks} />
       <h2>Task List</h2>
 
-      {/* Show Loading */}
       {loading && <p>Loading tasks...</p>}
-
-      {/* Show Errors */}
       {error && <p style={{ color: "red" }}>{error}</p>}
 
-      {/* Show Tasks */}
       {tasks.length > 0
-        ? tasks.map((task) => <TaskItem key={task._id} task={task} />)
+        ? tasks.map((task) => (
+            <TaskItem key={task._id} task={task} fetchTasks={fetchTasks} />
+          ))
         : !loading && <p>No tasks found.</p>}
     </div>
   );
