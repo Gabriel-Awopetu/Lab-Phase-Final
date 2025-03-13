@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import RegisterForm from "./components/RegisterForm";
 import LoginForm from "./components/LoginForm";
-import TaskForm from "./components/TaskForm";
+// import TaskForm from "./components/TaskForm";
 import TaskList from "./components/TaskList";
+import "./styles.css";
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -23,7 +24,7 @@ const App = () => {
   };
 
   return (
-    <div>
+    <div className="container">
       <h1>Task Management App</h1>
 
       {!isAuthenticated ? (

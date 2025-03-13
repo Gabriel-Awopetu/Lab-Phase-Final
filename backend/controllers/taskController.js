@@ -1,21 +1,47 @@
 const Task = require("../models/taskModel");
 
-// ✅ Fetch tasks for logged-in user
+// ✅ Fetch tasks with filtering, searching, and sorting
 const getTasks = async (req, res) => {
   try {
-    const userId = req.user.id; // Get user ID from token
-    const tasks = await Task.find({ user: userId }).sort({ createdAt: -1 }); // Fetch user-specific tasks
+    const userId = req.user.id;
+    let { status, search, sortBy } = req.query;
+
+    let query = { user: userId };
+
+    // ✅ Filter by status
+    if (status) {
+      query.status = status.toLowerCase();
+    }
+
+    // ✅ Search by title or description
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    // ✅ Custom sorting: Assign numerical values to priority levels
+    const priorityOrder = { high: 1, medium: 2, low: 3 };
+
+    let tasks = await Task.find(query);
+
+    // ✅ Ensure tasks are sorted manually in JavaScript
+    tasks = tasks.sort(
+      (a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]
+    );
+
     res.status(200).json({ success: true, data: tasks });
   } catch (error) {
     res.status(500).json({ success: false, message: "Server error", error });
   }
 };
 
-// ✅ Create a task for the authenticated user
+// ✅ Create a new task
 const createTask = async (req, res) => {
   try {
-    const { title, description, deadline } = req.body;
-    const userId = req.user.id; // Ensure the request has a valid user
+    const { title, description, deadline, priority } = req.body;
+    const userId = req.user?.id; // Ensure the user ID is extracted properly
 
     if (!userId) {
       return res
@@ -23,28 +49,36 @@ const createTask = async (req, res) => {
         .json({ message: "Unauthorized: No user ID found." });
     }
 
+    if (!title || !deadline) {
+      return res
+        .status(400)
+        .json({ message: "Title and deadline are required." });
+    }
+
     const task = new Task({
       title,
       description,
       deadline,
-      user: userId, // Assign task to logged-in user
+      priority: priority || "medium", // ✅ Default priority if missing
+      user: userId, // ✅ Ensure task is linked to the logged-in user
     });
 
     await task.save();
     res.status(201).json({ message: "Task created successfully", task });
   } catch (error) {
+    console.error("❌ Error creating task:", error);
     res.status(500).json({ message: "Server error", error });
   }
 };
 
-// ✅ Update Task (Only the owner can update)
+// ✅ Update Task (including priority)
 const updateTask = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
 
     const task = await Task.findOneAndUpdate(
-      { _id: id, user: userId }, // Ensure task belongs to user
+      { _id: id, user: userId },
       req.body,
       { new: true, runValidators: true }
     );
@@ -61,7 +95,7 @@ const updateTask = async (req, res) => {
   }
 };
 
-// ✅ Delete Task (Only the owner can delete)
+// ✅ Delete Task
 const deleteTask = async (req, res) => {
   try {
     const { id } = req.params;

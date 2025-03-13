@@ -21,6 +21,11 @@ const taskSchema = new mongoose.Schema(
       default: "pending",
       set: (value) => value.toLowerCase(),
     },
+    priority: {
+      type: String,
+      enum: ["low", "medium", "high"], // ✅ Added priority field
+      default: "medium",
+    },
   },
   { timestamps: true }
 );

@@ -1,33 +1,29 @@
 import React, { useState } from "react";
-import axios from "../api/axios"; // Use the correct path
+import axios from "../api/axios";
 
 const TaskItem = ({ task, fetchTasks }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTask, setEditedTask] = useState({ ...task });
 
-  // ✅ Handle Input Change
   const handleChange = (e) => {
     setEditedTask({ ...editedTask, [e.target.name]: e.target.value });
   };
 
-  // ✅ Handle Task Update
   const handleUpdate = async () => {
     try {
-      const res = await axios.put(`/tasks/${task._id}`, editedTask);
-      console.log("Task Updated:", res.data);
+      await axios.put(`/tasks/${task._id}`, editedTask);
       setIsEditing(false);
-      fetchTasks(); // Refresh task list
+      fetchTasks();
     } catch (error) {
       console.error("Error updating task:", error);
     }
   };
 
-  // ✅ Handle Task Delete
   const handleDelete = async () => {
     if (window.confirm("Are you sure you want to delete this task?")) {
       try {
         await axios.delete(`/tasks/${task._id}`);
-        fetchTasks(); // Refresh task list
+        fetchTasks();
       } catch (error) {
         console.error("Error deleting task:", error);
       }
@@ -35,7 +31,7 @@ const TaskItem = ({ task, fetchTasks }) => {
   };
 
   return (
-    <div>
+    <div className={`task-item ${task.priority}`}>
       {isEditing ? (
         <>
           <input
@@ -55,6 +51,27 @@ const TaskItem = ({ task, fetchTasks }) => {
             value={editedTask.deadline}
             onChange={handleChange}
           />
+
+          <select
+            name="status"
+            value={editedTask.status}
+            onChange={handleChange}
+          >
+            <option value="pending">Pending</option>
+            <option value="in progress">In Progress</option>
+            <option value="completed">Completed</option>
+          </select>
+
+          <select
+            name="priority"
+            value={editedTask.priority}
+            onChange={handleChange}
+          >
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+
           <button onClick={handleUpdate}>Save</button>
           <button onClick={() => setIsEditing(false)}>Cancel</button>
         </>
@@ -64,8 +81,9 @@ const TaskItem = ({ task, fetchTasks }) => {
           <p>{task.description}</p>
           <p>Deadline: {new Date(task.deadline).toLocaleDateString()}</p>
           <p>Status: {task.status}</p>
+          <p className="priority-label">Priority: {task.priority}</p>
           <button onClick={() => setIsEditing(true)}>Edit</button>
-          <button onClick={handleDelete} style={{ color: "red" }}>
+          <button onClick={handleDelete} className="delete-btn">
             Delete
           </button>
         </>
